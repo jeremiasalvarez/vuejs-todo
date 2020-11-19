@@ -1,3 +1,39 @@
+table {
+    table-layout: fixed;
+}
+
+ul {
+    list-style: none;
+}
+
+td {
+    word-wrap: break-word;
+}
+
+textarea {
+    resize: none;
+}
+
+.main-bg {
+    background-color: #f0f8ff;
+}
+
 .m-auto {
     margin: auto;
+}
+
+.m-res > button,
+.m-res > div {
+    margin: 5px 2.5px 0 2.5px;
+}
+
+@media (min-width: 768px) {
+    .m-res > button,
+    .m-res > div {
+        margin: unset;
+    }
+}
+
+.p-events-none {
+    pointer-events: none;
 }

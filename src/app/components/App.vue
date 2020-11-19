@@ -1,33 +1,46 @@
 <template>
-    <div>
-        <nav class="navbar navbar-light bg-light">
-            <a href="/" class="navbar-brand"> Todo App </a>
-            
-        </nav>
+    <div >
+        <div class="bg-light">
+            <h1 class="text-center p-3">Gestión de Tareas</h1>
+        </div>
 
         <div class="container">
             <div class="row mt-5">
-                <div class="col-md-5">
+                <div class="col-md-4">
+                    <h4 class="text-center mb-3">Nueva Tarea</h4>
                     <div class="card">
                         <div class="card-body">
                             <form @submit.prevent="addTodo">
                                 <div class="form-group">
-                                    <input v-model="todo.title" type="text" placeholder="Inserta una nueva tarea" class="form-control">
+                                    <input v-model="todo.title" type="text" placeholder="Titulo de la tarea" class="form-control">
                                    
                                 </div>
                                 <div class="form-group">
                                     <textarea v-model="todo.description" placeholder="Descripcion de la tarea" class="form-control" cols="30" rows="7"></textarea>
-                                </div>  
-                                <button class="btn btn-primary btn-block">Guardar Tarea</button>
+                                </div>
+                                <div v-if="hasErrors">
+                                    <div class="form-group">
+                                        <ul v-for="(error, index) of errorList" :key="index">
+                                            <li class="text-danger font-weight-bold"><i class="fas fa-exclamation-circle"></i> {{error}}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="p-events-none" v-if="loadingCreate">
+                                    <button class="btn btn-primary btn-block"><i class="fas fa-circle-notch text-white fa-spin"></i> Guardando..</button>
+                                </div>
+                                <div v-else>
+                                    <button class="btn btn-primary btn-block">Guardar Tarea</button>
+                                </div>         
                             </form>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-7">
-                    <div id="tableLoader" class="d-none justify-content-center align-items-center">
-                        <i class="fas fa-circle-notch fa-spin"></i>
-                    </div>
+                <div class="col-md-8">
+                    <h4 class="mb-3">Tareas Guardadas</h4>
                     <table class="table table-bordered">
+                        <div v-if="loadingTable" class="justify-content-center align-items-center">
+                            <i class="fas fa-circle-notch fa-spin text-primary"></i>
+                        </div>
                         <thead>
                             <tr>
                                 <th>Titulo</th>
@@ -37,25 +50,48 @@
                             </tr>
                         </thead >
                         <tbody>
-                            <tr v-for="todo of todoList">
-                                <td>{{todo.title}}</td>
+                            
+                            <tr v-for="(todo, index) of todoList" :key="todo.id">
+                                <td class="text-wrap">{{todo.title}}</td>
                                 <td>{{todo.description}}</td>
-                                <td v-if="todo.completed == 1">
-                                    Completada
+                                <td class="text-success font-weight-bold" v-if="todo.completed == 1">
+                                    Completada <i class="fas fa-check "></i>
                                 </td>
-                                <td v-else>
-                                    Pendiente
+                                <td class="text-warning font-weight-bold" v-else>
+                                    Pendiente <i class="fas fa-exclamation-circle "></i> 
                                 </td>
                                 <td >
-                                    <div class="d-flex justify-content-around align-items-center" v-if="todo.completed == 1">
-                                        <button @click="switchState(todo.id, 0)" class="btn btn-warning"><i class="fas fa-clock"></i></button>
+                                    <div class="d-flex justify-content-around align-items-center m-res" v-if="todo.completed == 1">
                                         
-                                        <button @click="deleteTodo(todo.id, true)" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
+                                        <div v-if="loadingState.loading && loadingState.clickedIndex === index">
+                                            <button class="btn btn-warning p-events-none">
+                                                <i class="fas fa-circle-notch text-white fa-spin"></i>
+                                            </button>
+                                        </div>
+                                        <div v-else>
+                                            <button @click="switchState(todo.id, 0, index)" class="btn btn-warning">
+                                                <i class="fas fa-clock text-white"></i>
+                                            </button>
+                                        </div>
+
+                                        <div v-if="loadingDelete.loading && loadingDelete.clickedIndex === index">
+                                            <button class="btn btn-danger p-events-none"><i class="fas fa-circle-notch text-white fa-spin"></i></button>
+                                        </div>
+                                        <div v-else>
+                                            <button @click="deleteTodo(todo.id, true, index)" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
+                                        </div>
+                                        
                                     </div>     
-                                    <div class="d-flex justify-content-around align-items-center" v-else>
+                                    <div class="d-flex justify-content-around align-items-center flex-wrap m-res" v-else>
 
-                                        <button data-toggle="tooltip" data-placement="top" title="Tooltip on top" @click="switchState(todo.id, 1)" class="btn btn-success"><i class="fas fa-check"></i></button>
+                                        <div v-if="loadingState.loading && loadingState.clickedIndex === index">
+                                            <button class="btn btn-success p-events-none"><i class="fas fa-circle-notch text-white fa-spin"></i></button>
+                                        </div>
 
+                                        <div v-else>
+                                            <button @click="switchState(todo.id, 1, index)" class="btn btn-success"><i class="fas fa-check"></i></button>
+                                        </div>
+                                        
                                         <button @click="fillEditTodo(todo.title, todo.description)" data-toggle="modal" v-bind:data-target="`#editModal_${todo.id}`" class="btn btn-secondary"><i class="fas fa-edit"></i></button>
                                         <div v-bind:id="`editModal_${todo.id}`" class="modal fade" tabindex="-1" aria-labelledby="editModal_Label" aria-hidden="true">
                                             <div class="modal-dialog">
@@ -81,7 +117,13 @@
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button v-bind:id="`closeEditModal_${todo.id}`" type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                                                        <button @click="saveChanges(todo.id)" type="button" class="btn btn-primary">Guardar Cambios</button>
+
+                                                        <div v-if="loadingEdit">
+                                                            <button type="button" class="btn btn-primary p-events-none"><i class="fas fa-circle-notch text-white fa-spin"></i> Guardando..</button>
+                                                        </div>
+                                                        <div v-else>
+                                                            <button @click="saveChanges(todo.id)" type="button" class="btn btn-primary">Guardar Cambios</button>
+                                                        </div>             
                                                     </div>
                                                 </div>
                                             </div>
@@ -103,7 +145,14 @@
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button v-bind:id="`closeDeleteModal_${todo.id}`" type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                                                        <button @click="deleteTodo(todo.id)" type="button" class="btn btn-danger">Confirmar</button>
+
+                                                        <div v-if="loadingDelete.loading && loadingDelete.clickedIndex === index">
+                                                            <button type="button" class="btn btn-danger p-events-none"><i class="fas fa-circle-notch text-white fa-spin"></i> Eliminando..</button>
+                                                        </div>
+                                                        <div v-else>
+                                                            <button @click="deleteTodo(todo.id,false, index)" type="button" class="btn btn-danger">Confirmar</button>
+                                                        </div>
+                                                        
                                                     </div>
                                                 </div>
                                             </div>
@@ -113,8 +162,10 @@
                                 
                             </tr>
                         </tbody>
-                       
                     </table>
+                    <div class="text-warning font-weight-bold text-center" v-if="todoList.length == 0 && !loadingTable">
+                                <i class="fas fa-exclamation-circle"></i> Por el momento no tienes tareas guardadas.
+                    </div>
                 </div>   
             </div>
         </div>
@@ -142,26 +193,67 @@
             return { 
                 todo: new Todo(), //modelo para crear una nueva tarea
                 todoList: [], //lista de tareas
-                editTodo: new Todo() //modelo para editar una tarea
+                editTodo: new Todo(), //modelo para editar una tarea,
+                loadingState: {
+                    loading: false,
+                    clickedIndex: -1
+                },
+                loadingEdit: false,
+                loadingDelete: {
+                    loading: false,
+                    clickedIndex: -1
+                },
+                loadingCreate: false,
+                loadingTable: false,
+                hasErrors: false,
+                errorList: []
             } 
         },
         
         created() {
-            this.getTodos();
+            
+            this.loadingTable = true;
+            this.getTodos(() => {
+                this.loadingTable = false
+            });
         },
         methods: {
 
-            getTodos(){
+            checkErrors() {
+                
+                this.errorList = []
+
+                if (!this.todo.title) {
+                    this.errorList.push("Debes completar el campo 'Titulo'")
+                }
+                if (!this.todo.description) {
+                    this.errorList.push("Debes completar el campo 'Descripcion'")
+                }
+                return this.errorList.length > 0 //* si es mayor a 0 significa que tiene errores
+            },
+            getTodos(callback){
 
                 fetch("/api/tasks")
                     .then(response => response.json())
                     .then(data => {
                         this.todoList = data.todos
+                        callback()
                     })
                 
             },
             addTodo() {
                 
+                this.hasErrors = this.checkErrors();
+
+                if (this.hasErrors) {
+                    this.$toasted.global.error({
+                    message : 'Soluciona los errores para guardar la tarea'
+                    }); 
+                    return;
+                }
+
+                this.loadingCreate = true;
+
                 fetch('/api/tasks/create', {
                     method: 'post',
                     headers: {
@@ -172,14 +264,23 @@
                 })
                     .then(response => response.json())
                     .then(data => {
-                        this.getTodos();
-
+                        this.getTodos(() => {
+                            console.log(data);
+                            this.loadingCreate = false;
+                            this.todo = new Todo(); //* Resetear todo
+                            this.errorList = [] //* Resetear errores
+                            this.$toasted.global.success({
+                            message : 'Tarea guardada exitosamente!'
+                            }); 
+                        });
                     })
 
-
-                this.todo = new Todo(); //* Resetear todo
+                
             },
-            deleteTodo(id, completed = false) {
+            deleteTodo(id, completed = false, index) {
+
+               this.loadingDelete.loading = true;
+               this.loadingDelete.clickedIndex = index;
                fetch('/api/tasks/delete', {
                     method: 'post',
                     headers: {
@@ -190,13 +291,21 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    this.getTodos()
-                    if (!completed) {
+                    this.getTodos(() => {
+                        if (!completed) {
                         closeModal(`closeDeleteModal_${id}`)
-                    }
+                        }
+                        this.loadingDelete.loading = false;
+                        this.loadingDelete.clickedIndex = -1;
+                        this.$toasted.global.info({
+                            message : 'La tarea fue removida exitosamente'
+                        }); 
+                    })            
                 })
             },
             saveChanges(id) {
+                this.loadingEdit = true;
+
                 const data = {
                     id,
                     newTitle: this.editTodo.title,
@@ -213,8 +322,13 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    this.getTodos()
-                    closeModal(`closeEditModal_${id}`)
+                    this.getTodos(() => {
+                        closeModal(`closeEditModal_${id}`)
+                        this.loadingEdit = false;
+                        this.$toasted.global.info({
+                            message : 'La tarea fue editada exitosamente'
+                        });
+                    })
                 })
 
 
@@ -222,8 +336,10 @@
             fillEditTodo(title, description) {
                 this.editTodo = new Todo(title, description)
             },
-            switchState(id, state) {
+            switchState(id, state, index) {
 
+                this.loadingState.loading = true;
+                this.loadingState.clickedIndex = index;
                 fetch('/api/tasks/switch_state', {
                     method: 'post',
                     headers: {
@@ -234,8 +350,20 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log(data)
-                    this.getTodos()
+                    this.getTodos(() => {
+                        this.loadingState.loading = false;
+                        this.loadingState.clickedIndex = -1;
+
+                        if (state == 0) {
+                            this.$toasted.global.info({
+                                message : 'Tarea marcada como pendiente'
+                            });
+                        } else {
+                            this.$toasted.global.success({
+                                message : 'Tarea marcada como completada'
+                            });
+                        }
+                    })
                 })
             }
         }

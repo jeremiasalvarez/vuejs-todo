@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "webpack": "webpack --mode development --watch"
+    "webpack": "webpack --mode development --watch",
+    "build": "webpack --mode production",
+    "start": "node src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +17,8 @@
     "express": "^4.17.1",
     "morgan": "^1.10.0",
     "mysql": "^2.18.1",
-    "vue": "^2.6.12"
+    "vue": "^2.6.12",
+    "vue-toasted": "^1.1.28"
   },
   "devDependencies": {
     "@babel/core": "^7.12.3",
