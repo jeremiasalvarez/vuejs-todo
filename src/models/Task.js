@@ -40,6 +40,67 @@ class Todos {
             }
         }
     }
+
+    static async updateTodo(data) {
+
+        try {
+            
+            const result = await pool.query("UPDATE tasks SET title=?, description=? WHERE id=?", [data.newTitle, data.newDescription, data.id]);
+
+            return {
+                success: result.affectedRows == 1,
+                message: "Actualizado Correctamente"
+            }
+
+        } catch (error) {
+            
+            return {
+                success: false,
+                message: error.message
+            }
+        }
+    }
+
+    static async updateState(id, state) {
+
+        try {
+            
+            const result = await pool.query("UPDATE tasks SET completed=? WHERE id=?",[state, id]);
+
+            return {
+                success: result.affectedRows == 1,
+                message: "Tarea completada exitosamente"
+            }
+
+        } catch (error) {
+            
+            return {
+                success: false,
+                message: error.message
+            }
+        }
+    }
+
+    static async deleteTodo(id) {
+
+        try {
+            
+            const result = await pool.query("DELETE FROM tasks WHERE id=?", [id]);
+
+            return {
+                success: result.affectedRows == 1,
+                message: "Tarea eliminada exitosamente"
+            }
+
+        } catch (error) {
+            
+            return {
+                success: false,
+                message: error.message
+            }
+        }
+    }
+
 }
 
 module.exports = {
