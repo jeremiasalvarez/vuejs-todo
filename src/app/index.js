@@ -1,6 +1,10 @@
 import Vue from 'vue'
 import App from './components/App.vue'
 import Toasted from 'vue-toasted';
+import VTooltip from 'v-tooltip'
+
+Vue.use(VTooltip)
+
 
 Vue.use(Toasted, {
     duration: 1500,

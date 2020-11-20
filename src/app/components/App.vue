@@ -29,7 +29,7 @@
                                     <button class="btn btn-primary btn-block"><i class="fas fa-circle-notch text-white fa-spin"></i> Guardando..</button>
                                 </div>
                                 <div v-else>
-                                    <button class="btn btn-primary btn-block">Guardar Tarea</button>
+                                    <button class="btn btn-primary btn-block">Guardar Tarea <i class="fas fa-plus ml-1"></i></button>
                                 </div>         
                             </form>
                         </div>
@@ -69,7 +69,7 @@
                                             </button>
                                         </div>
                                         <div v-else>
-                                            <button @click="switchState(todo.id, 0, index)" class="btn btn-warning">
+                                            <button v-bind:class="{'p-events-none': blockButtons}" v-tooltip="'Marcar tarea como pendiente'" @click="switchState(todo.id, 0, index)" class="btn btn-warning">
                                                 <i class="fas fa-clock text-white"></i>
                                             </button>
                                         </div>
@@ -78,7 +78,7 @@
                                             <button class="btn btn-danger p-events-none"><i class="fas fa-circle-notch text-white fa-spin"></i></button>
                                         </div>
                                         <div v-else>
-                                            <button @click="deleteTodo(todo.id, true, index)" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
+                                            <button v-bind:class="{'p-events-none': blockButtons}" v-tooltip="'Eliminar Tarea'" @click="deleteTodo(todo.id, true, index)" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
                                         </div>
                                         
                                     </div>     
@@ -89,10 +89,10 @@
                                         </div>
 
                                         <div v-else>
-                                            <button @click="switchState(todo.id, 1, index)" class="btn btn-success"><i class="fas fa-check"></i></button>
+                                            <button v-bind:class="{'p-events-none': blockButtons}" v-tooltip="'Marcar tarea como completada'" @click="switchState(todo.id, 1, index)" class="btn btn-success"><i class="fas fa-check"></i></button>
                                         </div>
                                         
-                                        <button @click="fillEditTodo(todo.title, todo.description)" data-toggle="modal" v-bind:data-target="`#editModal_${todo.id}`" class="btn btn-secondary"><i class="fas fa-edit"></i></button>
+                                        <button v-bind:class="{'p-events-none': blockButtons}" v-tooltip="'Editar tarea'" @click="fillEditTodo(todo.title, todo.description)" data-toggle="modal" v-bind:data-target="`#editModal_${todo.id}`" class="btn btn-secondary"><i class="fas fa-edit"></i></button>
                                         <div v-bind:id="`editModal_${todo.id}`" class="modal fade" tabindex="-1" aria-labelledby="editModal_Label" aria-hidden="true">
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
@@ -129,7 +129,7 @@
                                             </div>
                                         </div>
                                         
-                                        <button data-toggle="modal" v-bind:data-target="`#deleteModal_${todo.id}`" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
+                                        <button v-bind:class="{'p-events-none': blockButtons}" v-tooltip="'Eliminar tarea'" data-toggle="modal" v-bind:data-target="`#deleteModal_${todo.id}`" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
 
                                         <div v-bind:id="`deleteModal_${todo.id}`" class="modal fade" tabindex="-1" aria-labelledby="editModal_Label" aria-hidden="true">
                                             <div class="modal-dialog">
@@ -193,7 +193,8 @@
             return { 
                 todo: new Todo(), //modelo para crear una nueva tarea
                 todoList: [], //lista de tareas
-                editTodo: new Todo(), //modelo para editar una tarea,
+                editTodo: new Todo(), //modelo para editar una tarea
+                blockButtons: false, //* variable para bloquear todos los botones mientras se procesa otra accion
                 loadingState: {
                     loading: false,
                     clickedIndex: -1
@@ -205,13 +206,16 @@
                 },
                 loadingCreate: false,
                 loadingTable: false,
-                hasErrors: false,
+                //*objetos/variables loading utilizadas para animar los botones
+                //*se utilizan objetos para poder manejar los indices de los botones presionados (de lo contrario se animarian todos los botones al mismo tiempo)
+
+                hasErrors: false, //*modelos para control de errores
                 errorList: []
             } 
         },
         
         created() {
-            
+            //*funciones que se ejecutan la primera vez que se abre la app
             this.loadingTable = true;
             this.getTodos(() => {
                 this.loadingTable = false
@@ -238,11 +242,13 @@
                     .then(data => {
                         this.todoList = data.todos
                         callback()
+                        //*se utiliza un callback para mejorar la experiencia de usuario
                     })
                 
             },
             addTodo() {
                 
+                //*control de errores en los campos
                 this.hasErrors = this.checkErrors();
 
                 if (this.hasErrors) {
@@ -253,7 +259,7 @@
                 }
 
                 this.loadingCreate = true;
-
+                this.blockButtons = true;
                 fetch('/api/tasks/create', {
                     method: 'post',
                     headers: {
@@ -272,6 +278,7 @@
                             this.$toasted.global.success({
                             message : 'Tarea guardada exitosamente!'
                             }); 
+                            this.blockButtons = false;
                         });
                     })
 
@@ -281,6 +288,7 @@
 
                this.loadingDelete.loading = true;
                this.loadingDelete.clickedIndex = index;
+               this.blockButtons = true;
                fetch('/api/tasks/delete', {
                     method: 'post',
                     headers: {
@@ -299,7 +307,9 @@
                         this.loadingDelete.clickedIndex = -1;
                         this.$toasted.global.info({
                             message : 'La tarea fue removida exitosamente'
-                        }); 
+                        });
+                        this.blockButtons = false;
+
                     })            
                 })
             },
@@ -340,6 +350,8 @@
 
                 this.loadingState.loading = true;
                 this.loadingState.clickedIndex = index;
+                this.blockButtons = true;
+
                 fetch('/api/tasks/switch_state', {
                     method: 'post',
                     headers: {
@@ -353,7 +365,8 @@
                     this.getTodos(() => {
                         this.loadingState.loading = false;
                         this.loadingState.clickedIndex = -1;
-
+                        this.blockButtons = false;
+                        
                         if (state == 0) {
                             this.$toasted.global.info({
                                 message : 'Tarea marcada como pendiente'
