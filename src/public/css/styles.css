@@ -6,7 +6,8 @@ ul {
     list-style: none;
 }
 
-td {
+td,
+th {
     word-wrap: break-word;
 }
 
@@ -36,4 +37,14 @@ textarea {
 
 .p-events-none {
     pointer-events: none;
+}
+
+.table-container {
+    margin-top: 20px;
+}
+
+@media (min-width: 768px) {
+    .table-container {
+        margin-top: unset;
+    }
 }

@@ -35,7 +35,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-8 table-container">
                     <h4 class="mb-3">Tareas Guardadas</h4>
                     <table class="table table-bordered">
                         <div v-if="loadingTable" class="justify-content-center align-items-center">
