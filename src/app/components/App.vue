@@ -7,7 +7,7 @@
         <div class="container">
             <div class="row mt-5">
                 <div class="col-md-4">
-                    <h4 class="text-center mb-3">Nueva Tarea</h4>
+                    <h4 class="text-center mb-3 pb-3">Nueva Tarea</h4>
                     <div class="card">
                         <div class="card-body">
                             <form @submit.prevent="addTodo">
@@ -36,7 +36,22 @@
                     </div>
                 </div>
                 <div class="col-md-8 table-container">
-                    <h4 class="mb-3">Tareas Guardadas</h4>
+                    <div class="d-flex justify-content-between align-items-center pb-3">
+                        <h4 class="mb-3">Tareas Guardadas</h4>
+                        <div class="col-md-5">
+                             <div class="input-group">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text"> Mostrar </span>
+                                </div>
+                                <select v-model="filterValue" @change="applyFilter()" class="form-control border" id="">
+                                    <option value="all">Todas</option>
+                                    <option value="pen">Pendientes</option>
+                                    <option value="comp">Completadas</option>
+                                </select>
+                            </div>         
+                            
+                        </div>
+                    </div>
                     <table class="table table-bordered">
                         <div v-if="loadingTable" class="justify-content-center align-items-center">
                             <i class="fas fa-circle-notch fa-spin text-primary"></i>
@@ -51,7 +66,7 @@
                         </thead >
                         <tbody>
                             
-                            <tr v-for="(todo, index) of todoList" :key="todo.id">
+                            <tr v-for="(todo, index) of todoListFiltered" :key="todo.id">
                                 <td class="text-wrap">{{todo.title}}</td>
                                 <td>{{todo.description}}</td>
                                 <td class="text-success font-weight-bold" v-if="todo.completed == 1">
@@ -163,8 +178,14 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div class="text-warning font-weight-bold text-center" v-if="todoList.length == 0 && !loadingTable">
+                    <div class="text-warning font-weight-bold text-center" v-if="todoList.length == 0 && !loadingTable && filterValue === 'all'">
                                 <i class="fas fa-exclamation-circle"></i> Por el momento no tienes tareas guardadas.
+                    </div>
+                    <div class="text-warning font-weight-bold text-center" v-else-if="todoListFiltered.length == 0 && !loadingTable && filterValue === 'comp'">
+                        <i class="fas fa-exclamation-circle"></i> Por el momento no tienes tareas completadas.
+                    </div>
+                    <div class="text-warning font-weight-bold text-center" v-else-if="todoListFiltered.length == 0 && !loadingTable && filterValue === 'pen'">
+                        <i class="fas fa-exclamation-circle"></i> Por el momento no tienes tareas pendientes.
                     </div>
                 </div>   
             </div>
@@ -192,7 +213,8 @@
         data() {
             return { 
                 todo: new Todo(), //modelo para crear una nueva tarea
-                todoList: [], //lista de tareas
+                todoList: [], //lista de tareas (sin filtros)
+                todoListFiltered: [], // lista de tareas con filtros (es la que se muestra en pantalla)
                 editTodo: new Todo(), //modelo para editar una tarea
                 blockButtons: false, //* variable para bloquear todos los botones mientras se procesa otra accion
                 loadingState: {
@@ -210,19 +232,37 @@
                 //*se utilizan objetos para poder manejar los indices de los botones presionados (de lo contrario se animarian todos los botones al mismo tiempo)
 
                 hasErrors: false, //*modelos para control de errores
-                errorList: []
+                errorList: [],
+                filterValue: "" //*valor utilizado para filtrar los valores de la tabla
             } 
         },
         
         created() {
             //*funciones que se ejecutan la primera vez que se abre la app
             this.loadingTable = true;
+            this.filterValue = 'all';
             this.getTodos(() => {
                 this.loadingTable = false
             });
         },
         methods: {
 
+            applyFilter() {
+                
+                switch (this.filterValue) {
+                    case 'all':
+                        this.todoListFiltered = this.todoList
+                        break;
+                    case 'pen':
+                        this.todoListFiltered = this.todoList.filter(todo => todo.completed == 0)
+                        break;
+                    case 'comp':
+                        this.todoListFiltered = this.todoList.filter(todo => todo.completed == 1)
+                        break;
+                    default:
+                        break;
+                }
+            },
             checkErrors() {
                 
                 this.errorList = []
@@ -241,6 +281,8 @@
                     .then(response => response.json())
                     .then(data => {
                         this.todoList = data.todos
+                        this.todoListFiltered = this.todoList
+                        this.applyFilter()
                         callback()
                         //*se utiliza un callback para mejorar la experiencia de usuario
                     })
@@ -271,7 +313,6 @@
                     .then(response => response.json())
                     .then(data => {
                         this.getTodos(() => {
-                            console.log(data);
                             this.loadingCreate = false;
                             this.todo = new Todo(); //* Resetear todo
                             this.errorList = [] //* Resetear errores
@@ -366,7 +407,6 @@
                         this.loadingState.loading = false;
                         this.loadingState.clickedIndex = -1;
                         this.blockButtons = false;
-                        
                         if (state == 0) {
                             this.$toasted.global.info({
                                 message : 'Tarea marcada como pendiente'
