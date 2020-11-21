@@ -38,19 +38,7 @@
                 <div class="col-md-8 table-container">
                     <div class="d-flex justify-content-between align-items-center pb-3">
                         <h4 class="mb-3">Tareas Guardadas</h4>
-                        <div class="col-md-5">
-                             <div class="input-group">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text"> Mostrar </span>
-                                </div>
-                                <select v-model="filterValue" @change="applyFilter()" class="form-control border" id="">
-                                    <option value="all">Todas</option>
-                                    <option value="pen">Pendientes</option>
-                                    <option value="comp">Completadas</option>
-                                </select>
-                            </div>         
-                            
-                        </div>
+                        <filters-box v-model="filterValue" @sendFilterValue="applyFilter()"></filters-box>
                     </div>
                     <table class="table table-bordered">
                         <div v-if="loadingTable" class="justify-content-center align-items-center">
@@ -248,7 +236,7 @@
         methods: {
 
             applyFilter() {
-                
+
                 switch (this.filterValue) {
                     case 'all':
                         this.todoListFiltered = this.todoList

@@ -70,6 +70,41 @@ Vue.toasted.register('info',
     editDeleteOptions
 )
 
+
+//*Components
+
+Vue.component('filters-box', {
+    data: function() {
+        return {
+            value: 'all'
+        }
+    },
+    template: `
+    <div class="col-md-5">
+        <div class="input-group">
+        <div class="input-group-prepend">
+            <span class="input-group-text"> Mostrar </span>
+        </div>
+            <select v-bind:value="value"
+            v-on:input="$emit('input', $event.target.value)"
+            @change="sendEvent" 
+            class="form-control border" 
+            id="">
+                <option value="all">Todas</option>
+                <option value="pen">Pendientes</option>
+                <option value="comp">Completadas</option>
+            </select>
+        </div>                                 
+    </div>`,
+    methods: {
+
+        sendEvent(){
+            this.$emit('sendFilterValue', this.value);
+        }
+    }
+})
+
+
 new Vue({
     render: h => h(App)
 }).$mount('#app')
