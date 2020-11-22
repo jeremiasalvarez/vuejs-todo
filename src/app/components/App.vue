@@ -6,35 +6,7 @@
 
         <div class="container">
             <div class="row mt-5">
-                <div class="col-md-4">
-                    <h4 class="text-center mb-3 pb-3">Nueva Tarea</h4>
-                    <div class="card">
-                        <div class="card-body">
-                            <form @submit.prevent="addTodo">
-                                <div class="form-group">
-                                    <input v-model="todo.title" type="text" placeholder="Titulo de la tarea" class="form-control">
-                                   
-                                </div>
-                                <div class="form-group">
-                                    <textarea v-model="todo.description" placeholder="Descripcion de la tarea" class="form-control" cols="30" rows="7"></textarea>
-                                </div>
-                                <div v-if="hasErrors">
-                                    <div class="form-group">
-                                        <ul v-for="(error, index) of errorList" :key="index">
-                                            <li class="text-danger font-weight-bold"><i class="fas fa-exclamation-circle"></i> {{error}}</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="p-events-none" v-if="loadingCreate">
-                                    <button class="btn btn-primary btn-block"><i class="fas fa-circle-notch text-white fa-spin"></i> Guardando..</button>
-                                </div>
-                                <div v-else>
-                                    <button class="btn btn-primary btn-block">Guardar Tarea <i class="fas fa-plus ml-1"></i></button>
-                                </div>         
-                            </form>
-                        </div>
-                    </div>
-                </div>
+                <new-todo-form :todo="todo" :hasErrors="hasErrors" :errorList="errorList" :loading="loadingCreate" @send-newTodo-data="getData"></new-todo-form>
                 <div class="col-md-8 table-container">
                     <div class="d-flex justify-content-between align-items-center pb-3">
                         <h4 class="mb-3">Tareas Guardadas</h4>
@@ -96,73 +68,14 @@
                                         </div>
                                         
                                         <button v-bind:class="{'p-events-none': blockButtons}" v-tooltip="'Editar tarea'" @click="fillEditTodo(todo.title, todo.description)" data-toggle="modal" v-bind:data-target="`#editModal_${todo.id}`" class="btn btn-secondary"><i class="fas fa-edit"></i></button>
-                                        <div v-bind:id="`editModal_${todo.id}`" class="modal fade" tabindex="-1" aria-labelledby="editModal_Label" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Editar Tarea - <b>{{todo.title}}</b></h5>
-                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&times;</span>
-                                                        </button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <form>
-                                                        <div class="form-group">
-                                                            <label for="recipient-name" class="col-form-label">Titulo</label>
-                                                            <input v-model="editTodo.title" type="text" class="form-control" id="recipient-name">
-                                                        </div>
-                                                        <div class="form-group">
-                                                            <label for="message-text" class="col-form-label">Descripción</label>
-                                                            <textarea v-model="editTodo.description" class="form-control" id="message-text">
-                                                            </textarea>
-                                                        </div>
-                                                        </form>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button v-bind:id="`closeEditModal_${todo.id}`" type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
 
-                                                        <div v-if="loadingEdit">
-                                                            <button type="button" class="btn btn-primary p-events-none"><i class="fas fa-circle-notch text-white fa-spin"></i> Guardando..</button>
-                                                        </div>
-                                                        <div v-else>
-                                                            <button @click="saveChanges(todo.id)" type="button" class="btn btn-primary">Guardar Cambios</button>
-                                                        </div>             
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <edit-modal @send-edit-model="processEdit" :modalIndex="todo.id" :loading="loadingEdit" :todo="editTodo" :title="todo.title"></edit-modal>
                                         
                                         <button v-bind:class="{'p-events-none': blockButtons}" v-tooltip="'Eliminar tarea'" data-toggle="modal" v-bind:data-target="`#deleteModal_${todo.id}`" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
-
-                                        <div v-bind:id="`deleteModal_${todo.id}`" class="modal fade" tabindex="-1" aria-labelledby="editModal_Label" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Eliminar Tarea - <b>{{todo.title}}</b> </h5>
-                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&times;</span>
-                                                        </button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>Esta tarea aun no ha sido completada. ¿Estas seguro que deseas eliminarla? <br> <br> Este procedimiento no se puede deshacer</p>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button v-bind:id="`closeDeleteModal_${todo.id}`" type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-
-                                                        <div v-if="loadingDelete.loading && loadingDelete.clickedIndex === index">
-                                                            <button type="button" class="btn btn-danger p-events-none"><i class="fas fa-circle-notch text-white fa-spin"></i> Eliminando..</button>
-                                                        </div>
-                                                        <div v-else>
-                                                            <button @click="deleteTodo(todo.id,false, index)" type="button" class="btn btn-danger">Confirmar</button>
-                                                        </div>
-                                                        
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        
+                                        <delete-modal @delete-todo="processDelete" :title="todo.title" :todoId="todo.id" :loading="loadingDelete.loading && loadingDelete.clickedIndex === index" :completed="todo.completed == 1" :index="index"></delete-modal>
                                     </div>      
-                                </td>
-                                
+                                </td>                
                             </tr>
                         </tbody>
                     </table>
@@ -185,9 +98,10 @@
 
     class Todo {
 
-        constructor(title, description) {
+        constructor(title, description, id) {
             this.title = title
             this.description = description
+            this.id = id
         }
 
     }
@@ -276,6 +190,10 @@
                     })
                 
             },
+            getData(data) {
+                this.todo = new Todo(data.title, data.description)
+                this.addTodo()
+            },
             addTodo() {
                 
                 //*control de errores en los campos
@@ -313,6 +231,9 @@
 
                 
             },
+            processDelete(data) {
+                this.deleteTodo(data.id, data.completed, data.index)
+            },
             deleteTodo(id, completed = false, index) {
 
                this.loadingDelete.loading = true;
@@ -330,7 +251,7 @@
                 .then(data => {
                     this.getTodos(() => {
                         if (!completed) {
-                        closeModal(`closeDeleteModal_${id}`)
+                        closeModal(`deleteModal_${id}_closeBtn`)
                         }
                         this.loadingDelete.loading = false;
                         this.loadingDelete.clickedIndex = -1;
@@ -341,6 +262,10 @@
 
                     })            
                 })
+            },
+            processEdit(todo){
+                this.editTodo = todo
+                this.saveChanges(this.editTodo.id)
             },
             saveChanges(id) {
                 this.loadingEdit = true;
@@ -362,7 +287,8 @@
                 .then(response => response.json())
                 .then(data => {
                     this.getTodos(() => {
-                        closeModal(`closeEditModal_${id}`)
+                        console.log("ID: " + id);
+                        closeModal(`editModal_${id}_CloseBtn`)
                         this.loadingEdit = false;
                         this.$toasted.global.info({
                             message : 'La tarea fue editada exitosamente'
@@ -374,6 +300,7 @@
             },
             fillEditTodo(title, description) {
                 this.editTodo = new Todo(title, description)
+                return this.editTodo
             },
             switchState(id, state, index) {
 
