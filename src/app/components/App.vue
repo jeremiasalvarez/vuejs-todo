@@ -182,6 +182,7 @@
                 fetch("/api/tasks")
                     .then(response => response.json())
                     .then(data => {
+                        console.log(data)
                         this.todoList = data.todos
                         this.todoListFiltered = this.todoList
                         this.applyFilter()
