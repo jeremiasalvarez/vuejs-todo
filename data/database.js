@@ -8,6 +8,8 @@ const keys = {
     database: process.env.DB_NAME
 }
 
+console.log("KEYS:", keys)
+
 //
 const pool = db.createPool(keys);
 
@@ -29,6 +31,8 @@ pool.getConnection((err, connection) => {
   if (connection) {
     console.log("La base de datos esta conectada");
   }
+    
+   console.log("ACA")
 
   return;
 });
